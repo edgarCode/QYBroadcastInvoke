@@ -1,4 +1,4 @@
-package com.edgarcode.receivertest;
+package com.edgarcode.qytoolbox;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
             data.putString(key,jsonKey);
             i.putExtras(data);
             sendBroadcast(i);
+            finish();
         }
     }
 }
