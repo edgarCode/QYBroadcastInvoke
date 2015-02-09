@@ -1,21 +1,28 @@
 package com.edgarcode.qytoolbox;
 
+import java.io.IOException;
+
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.edgarcode.qytoolbox.net.QHttpClient;
+import com.edgarcode.qytoolbox.receiver.QReceiver;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
 public class MainActivity extends Activity {
-    private MyReiver mReceiver;
+    private QReceiver mReceiver;
+    private static final String TAG = "MainActivity";
+    private String url = "http://data.video.iqiyi.com/videos/v0/20150127/20/02/2b2dc765d80948f3fe9b7f94d3904368.ts?mts=a1046499x3fa377c8&start=28270302&end=30408508&hsize=4149&tag=1&v=&contentlength=886420#";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         IntentFilter filter = new IntentFilter(); 
         filter.addAction("com.qiyi.video.myreiver"); 
-        mReceiver  = new MyReiver();
+        mReceiver  = new QReceiver();
         registerReceiver(mReceiver, filter);
     }
     @Override
@@ -23,38 +30,23 @@ public class MainActivity extends Activity {
         super.onDestroy();
         unregisterReceiver(mReceiver);
     }
-    class MyReiver extends BroadcastReceiver {
-        private static final String TAG = "MyReiver";
-        private static final int TYPE_PLAY = 1;
-        private static final int TYPE_ALBUMDETAIL = 2;
-        private static final String jsonKey_Album = "{version:\"1.0\",vrsAlbumId:%s,vrsTvId:%s,history:\"0\",customer:\"iqiyi\",device:\"\",vrsChnId:%s,albumId:%s}";
-        private static final String jsonKey_Play = "{version:\"1.0\",vrsAlbumId:%s,vrsTvId:%s,history:\"0\",customer:\"iqiyi\",device:\"\"}";
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = (intent != null ? intent.getAction() : "");
-            Log.d(TAG, "onReceive action : " + action);
-            int type = intent.getIntExtra("type", TYPE_PLAY);
-            String vrsAlbumId = intent.getStringExtra("vrsAlbumId");
-            String vrsTvId = intent.getStringExtra("vrsTvId");
-            String vrsChnId = null; 
-            String albumId = null;
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Request request = new Request.Builder().url(url).build();
+        QHttpClient.getClient().newCall(request).enqueue(new Callback() {
 
-            String key = "playInfo";
-            Intent i = new Intent("com.qiyi.video.action.ACTION_PLAYVIDEO");
-            i.setFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            Bundle data = new Bundle();
-            String jsonKey = null;
-            if(type == TYPE_ALBUMDETAIL) {
-                vrsChnId = intent.getStringExtra("vrsChnId");
-                albumId = intent.getStringExtra("albumId");
-                jsonKey = String.format(jsonKey_Album, vrsAlbumId, vrsTvId, vrsChnId, albumId);
-            } else {
-                jsonKey = String.format(jsonKey_Play, vrsAlbumId, vrsTvId);
+            @Override
+            public void onResponse(Response response) throws IOException {
+                Log.i(TAG, "response " + response.code());
             }
-            data.putString(key,jsonKey);
-            i.putExtras(data);
-            sendBroadcast(i);
-            finish();
-        }
+
+            @Override
+            public void onFailure(Request response, IOException arg1) {
+                Log.i(TAG, "onFailure");
+
+            }
+        });
     }
 }
