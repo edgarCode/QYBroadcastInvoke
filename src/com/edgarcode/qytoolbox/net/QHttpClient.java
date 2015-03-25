@@ -9,6 +9,7 @@ public class QHttpClient {
     }
 
     public static OkHttpClient getClient() {
+        sClient.setFollowRedirects(false);
         return sClient;
     }
     
